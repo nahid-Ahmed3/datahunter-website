@@ -20,11 +20,8 @@ export default function UserProfile() {
   const handleSaveProfile = async () => {
     setLoading(true)
     try {
-      // Here you would update the user profile in Firebase
-      console.log('Updating profile:', { name })
       setIsEditing(false)
     } catch (error) {
-      console.error('Failed to update profile:', error)
     } finally {
       setLoading(false)
     }
@@ -73,7 +70,7 @@ export default function UserProfile() {
                   </div>
                   <p className="text-gray-600 dark:text-gray-400">{user.email}</p>
                   <div className="flex items-center gap-2 mt-2">
-                    <Badge variant="secondary">Member since {new Date(user.metadata.creationTime).toLocaleDateString()}</Badge>
+                    <Badge variant="secondary">Member since {user?.metadata?.creationTime ? new Date(user.metadata.creationTime).toLocaleDateString() : 'Recently'}</Badge>
                   </div>
                 </div>
               </div>
@@ -97,7 +94,7 @@ export default function UserProfile() {
                       <Label htmlFor="email">Email</Label>
                       <Input
                         id="email"
-                        value={user.email}
+                        value={user.email || ''}
                         disabled
                         placeholder="Email cannot be changed"
                       />
@@ -141,7 +138,7 @@ export default function UserProfile() {
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">
-                      {Math.floor((Date.now() - new Date(user.metadata.creationTime).getTime()) / (1000 * 60 * 60 * 24))}
+                      {user?.metadata?.creationTime ? Math.floor((Date.now() - new Date(user.metadata.creationTime).getTime()) / (1000 * 60 * 60 * 24)) : 1}
                     </div>
                     <p className="text-xs text-muted-foreground">Days ago</p>
                   </CardContent>
@@ -191,7 +188,7 @@ export default function UserProfile() {
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <Label>Email</Label>
-                    <Input value={user.email} disabled />
+                    <Input value={user.email || ''} disabled />
                   </div>
                   <div className="space-y-2">
                     <Label>Account Status</Label>
