@@ -41,9 +41,9 @@ async function createCustomServer() {
     setupSocket(io);
 
     // Start the server
-    server.listen(currentPort, hostname, () => {
-      console.log(`> Ready on http://${hostname}:${currentPort}`);
-      console.log(`> Socket.IO server running at ws://${hostname}:${currentPort}/api/socketio`);
+    server.listen(currentPort, () => {
+      console.log(`> Ready on port ${currentPort}`);
+      console.log(`> Socket.IO server running on port ${currentPort}/api/socketio`);
     });
 
   } catch (err) {
