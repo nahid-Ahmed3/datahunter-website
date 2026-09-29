@@ -1,26 +1,25 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { 
   Plus, 
   Search, 
-  Edit, 
   Trash2, 
-  Calendar,
   Filter,
   Grid,
   List,
-  Eye,
-  EyeOff
+  RefreshCw,
+  Newspaper
 } from 'lucide-react'
 
-interface News {
+interface NewsItem {
   id: string
   title: string
   content: string
@@ -33,98 +32,197 @@ interface News {
 }
 
 export default function NewsManagement() {
-  const [news, setNews] = useState<News[]>([
-    {
-      id: '1',
-      title: 'Revolutionary AI-Powered Data Analysis Tool Released',
-      content: 'Tech giant today announced the launch of their groundbreaking AI-powered data analysis tool that promises to revolutionize how businesses handle big data. The new leverages advanced machine learning algorithms to provide real-time insights and predictive analytics.',
-      excerpt: 'Revolutionary AI tool launched with advanced machine learning capabilities for real-time data analysis.',
-      author: 'Sarah Johnson',
-      category: 'Technology',
-      published: true,
-      publishedAt: '2024-01-15',
-      createdAt: '2024-01-15'
-    },
-    {
-      id: '2',
-      title: 'Cybersecurity Threats Reach All-Time High in 2024',
-      content: 'Recent reports indicate that cybersecurity threats have reached unprecedented levels in 2024, with ransomware attacks increasing by 300% compared to last year. Experts recommend enhanced security measures and regular software updates.',
-      excerpt: 'Cybersecurity threats reach alarming levels with ransomware attacks surging 300% year-over-year.',
-      author: 'Michael Chen',
-      category: 'Security',
-      published: true,
-      publishedAt: '2024-01-14',
-      createdAt: '2024-01-14'
-    },
-    {
-      id: '3',
-      title: 'Cloud Computing Market Expected to Double by 2026',
-      content: 'The global cloud computing market is projected to reach $1 trillion by 2026, driven by increasing adoption of hybrid cloud solutions and edge computing technologies. Major providers are investing heavily in infrastructure expansion.',
-      excerpt: 'Cloud computing market forecasted to double by 2026 with hybrid solutions leading growth.',
-      author: 'Emily Rodriguez',
-      category: 'Cloud Computing',
-      published: false,
-      createdAt: '2024-01-13'
-    }
-  ])
-
+  const [news, setNews] = useState<NewsItem[]>([])
+  const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [selectedCategory, setSelectedCategory] = useState('all')
-  const [selectedStatus, setSelectedStatus] = useState('all')
 
-  const categories = ['all', 'Technology', 'Security', 'Cloud Computing', 'Development', 'Mobile', 'Industry', 'Research', 'Education']
-  const statuses = ['all', 'published', 'draft']
+  // Add News Modal State
+  const [isAddOpen, setIsAddOpen] = useState(false)
+  const [newsTitle, setNewsTitle] = useState('')
+  const [newsContent, setNewsContent] = useState('')
+  const [newsExcerpt, setNewsExcerpt] = useState('')
+  const [newsAuthor, setNewsAuthor] = useState('Admin')
+  const [newsCategory, setNewsCategory] = useState('Technology')
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const filteredNews = news.filter(article => {
-    const matchesSearch = article.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         article.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         article.category.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesCategory = selectedCategory === 'all' || article.category === selectedCategory
-    const matchesStatus = selectedStatus === 'all' || 
-                         (selectedStatus === 'published' && article.published) ||
-                         (selectedStatus === 'draft' && !article.published)
-    return matchesSearch && matchesCategory && matchesStatus
+  const categories = ['all', 'Technology', 'Security', 'Cloud Computing', 'Development', 'Mobile', 'AI & Data']
+
+  const fetchNews = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch('/api/news')
+      if (res.ok) {
+        const data = await res.json()
+        setNews(data)
+      }
+    } catch (err) {
+      console.error('Failed to fetch news:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchNews()
+  }, [])
+
+  const handleCreateNews = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newsTitle || !newsContent) return
+
+    setIsSubmitting(true)
+    try {
+      const res = await fetch('/api/news', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: newsTitle,
+          content: newsContent,
+          excerpt: newsExcerpt || newsTitle.substring(0, 150),
+          author: newsAuthor,
+          category: newsCategory,
+          published: true
+        })
+      })
+
+      if (res.ok) {
+        setIsAddOpen(false)
+        setNewsTitle('')
+        setNewsContent('')
+        setNewsExcerpt('')
+        fetchNews()
+      }
+    } catch (err) {
+      console.error('Error adding news:', err)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleDeleteNews = async (id: string) => {
+    if (!confirm('Are you sure you want to permanently delete this news post from database?')) return
+
+    try {
+      const res = await fetch(`/api/news?id=${id}`, {
+        method: 'DELETE'
+      })
+      if (res.ok) {
+        setNews(news.filter(item => item.id !== id))
+      }
+    } catch (err) {
+      console.error('Error deleting news:', err)
+    }
+  }
+
+  const filteredNews = news.filter(item => {
+    const matchesSearch = item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         item.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         item.category.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory
+    return matchesSearch && matchesCategory
   })
 
-  const handleDeleteNews = (id: string) => {
-    if (confirm('Are you sure you want to delete this news article?')) {
-      setNews(news.filter(article => article.id !== id))
-    }
-  }
-
-  const handleTogglePublish = (id: string) => {
-    setNews(news.map(article => 
-      article.id === id ? { 
-        ...article, 
-        published: !article.published,
-        publishedAt: !article.published ? new Date().toISOString() : undefined
-      } : article
-    ))
-  }
-
-  const getStatusBadge = (published: boolean) => {
-    if (published) {
-      return <Badge className="bg-green-100 text-green-800">Published</Badge>
-    } else {
-      return <Badge variant="secondary">Draft</Badge>
-    }
-  }
-
   return (
-    <div className="space-y-6">
+    <div className="p-6 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">News Management</h1>
           <p className="text-gray-600 dark:text-gray-300 mt-1">
-            Manage all news articles and blog posts
+            Real-time Database News & Announcements Management
           </p>
         </div>
-        <Button className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600">
-          <Plus className="w-4 h-4 mr-2" />
-          Add New Article
-        </Button>
+
+        <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+          <DialogTrigger asChild>
+            <Button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold">
+              <Plus className="w-4 h-4 mr-2" />
+              Add News Article
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[550px] bg-gray-900 text-white border-gray-800">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-bold text-white">Publish News Article</DialogTitle>
+              <DialogDescription className="text-gray-400">
+                Post new announcements and news updates directly to the site.
+              </DialogDescription>
+            </DialogHeader>
+
+            <form onSubmit={handleCreateNews} className="space-y-4 pt-2">
+              <div className="space-y-2">
+                <Label htmlFor="newsTitle">Article Title</Label>
+                <Input
+                  id="newsTitle"
+                  placeholder="e.g. Revolutionary AI-Powered Tool Released"
+                  value={newsTitle}
+                  onChange={(e) => setNewsTitle(e.target.value)}
+                  className="bg-gray-800 border-gray-700 text-white"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="newsExcerpt">Short Summary (Excerpt)</Label>
+                <Input
+                  id="newsExcerpt"
+                  placeholder="Brief 1-sentence summary..."
+                  value={newsExcerpt}
+                  onChange={(e) => setNewsExcerpt(e.target.value)}
+                  className="bg-gray-800 border-gray-700 text-white"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="newsContent">Full Article Content</Label>
+                <Textarea
+                  id="newsContent"
+                  rows={5}
+                  placeholder="Write full article body here..."
+                  value={newsContent}
+                  onChange={(e) => setNewsContent(e.target.value)}
+                  className="bg-gray-800 border-gray-700 text-white"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="newsAuthor">Author Name</Label>
+                  <Input
+                    id="newsAuthor"
+                    value={newsAuthor}
+                    onChange={(e) => setNewsAuthor(e.target.value)}
+                    className="bg-gray-800 border-gray-700 text-white"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="newsCategory">Category</Label>
+                  <select
+                    id="newsCategory"
+                    value={newsCategory}
+                    onChange={(e) => setNewsCategory(e.target.value)}
+                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white"
+                  >
+                    {categories.filter(c => c !== 'all').map(cat => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <DialogFooter className="pt-4">
+                <Button type="button" variant="ghost" onClick={() => setIsAddOpen(false)} className="text-gray-400">
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isSubmitting} className="bg-blue-600 hover:bg-blue-500 text-white">
+                  {isSubmitting ? 'Publishing...' : 'Publish Article'}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Filters and Search */}
@@ -154,20 +252,9 @@ export default function NewsManagement() {
                   </option>
                 ))}
               </select>
-              <select 
-                value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value)}
-                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-              >
-                {statuses.map(status => (
-                  <option key={status} value={status}>
-                    {status === 'all' ? 'All Status' : status === 'published' ? 'Published' : 'Draft'}
-                  </option>
-                ))}
-              </select>
-              <Button variant="outline" size="sm">
-                <Filter className="w-4 h-4 mr-2" />
-                Filter
+              <Button variant="outline" size="sm" onClick={fetchNews}>
+                <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                Refresh
               </Button>
             </div>
           </div>
@@ -182,76 +269,68 @@ export default function NewsManagement() {
             size="sm"
             onClick={() => setViewMode('grid')}
           >
-            <Grid className="w-4 h-4" />
+            <Grid className="w-4 h-4 mr-2" />
+            Grid
           </Button>
           <Button
             variant={viewMode === 'list' ? 'default' : 'outline'}
             size="sm"
             onClick={() => setViewMode('list')}
           >
-            <List className="w-4 h-4" />
+            <List className="w-4 h-4 mr-2" />
+            List
           </Button>
         </div>
         <p className="text-sm text-gray-600 dark:text-gray-400">
-          Showing {filteredNews.length} of {news.length} articles
+          Showing {filteredNews.length} articles
         </p>
       </div>
 
       {/* News Grid/List */}
-      {viewMode === 'grid' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredNews.map((article) => (
-            <Card key={article.id} className="hover:shadow-lg transition-shadow">
-              <CardHeader className="pb-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Badge className="bg-blue-100 text-blue-800">{article.category}</Badge>
-                      {getStatusBadge(article.published)}
-                    </div>
-                    <h3 className="font-semibold text-gray-900 dark:text-white line-clamp-2">
-                      {article.title}
-                    </h3>
-                  </div>
-                  <div className="flex gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleTogglePublish(article.id)}
-                      className={article.published ? 'text-green-500' : 'text-gray-400'}
-                    >
-                      {article.published ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                    </Button>
-                  </div>
+      {loading ? (
+        <div className="text-center py-16">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+          <p className="mt-4 text-gray-400">Loading articles from database...</p>
+        </div>
+      ) : filteredNews.length === 0 ? (
+        <Card className="text-center py-16">
+          <CardContent>
+            <Newspaper className="mx-auto h-12 w-12 text-gray-400 mb-3" />
+            <p className="text-gray-500 text-lg font-medium">No news articles found in the database.</p>
+            <p className="text-gray-400 text-sm mt-1">Click "Add News Article" above to publish your first post.</p>
+          </CardContent>
+        </Card>
+      ) : viewMode === 'grid' ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {filteredNews.map((item) => (
+            <Card key={item.id} className="flex flex-col hover:shadow-lg transition-shadow">
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between gap-2">
+                  <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white leading-snug">
+                    {item.title}
+                  </CardTitle>
+                  <Badge variant="outline" className="text-xs shrink-0">
+                    {item.category}
+                  </Badge>
                 </div>
               </CardHeader>
-              
-              <CardContent className="space-y-4">
-                {article.excerpt && (
-                  <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-3">
-                    {article.excerpt}
-                  </p>
-                )}
-                
-                <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
-                  <span>By {article.author}</span>
-                  {article.publishedAt && (
-                    <span>{new Date(article.publishedAt).toLocaleDateString()}</span>
-                  )}
+              <CardContent className="flex-1 space-y-4">
+                <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-3">
+                  {item.excerpt || item.content}
+                </p>
+                <div className="flex items-center justify-between text-xs text-gray-500 border-t pt-3">
+                  <span>Author: {item.author}</span>
+                  <span>{new Date(item.createdAt).toLocaleDateString()}</span>
                 </div>
-                
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" className="flex-1">
-                    <Edit className="w-4 h-4 mr-1" />
-                    Edit
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => handleDeleteNews(article.id)}
-                    className="text-red-600 hover:text-red-700"
+                <div className="flex justify-end space-x-2 pt-2 border-t">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                    onClick={() => handleDeleteNews(item.id)}
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="w-4 h-4 mr-1" />
+                    Delete
                   </Button>
                 </div>
               </CardContent>
@@ -259,65 +338,29 @@ export default function NewsManagement() {
           ))}
         </div>
       ) : (
-        <div className="space-y-4">
-          {filteredNews.map((article) => (
-            <Card key={article.id}>
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Badge className="bg-blue-100 text-blue-800">{article.category}</Badge>
-                      {getStatusBadge(article.published)}
-                    </div>
-                    <h3 className="font-semibold text-gray-900 dark:text-white mb-2">{article.title}</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-3 line-clamp-2">
-                      {article.excerpt || article.content.substring(0, 150) + '...'}
-                    </p>
-                    <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
-                      <span>By {article.author}</span>
-                      {article.publishedAt && (
-                        <span>{new Date(article.publishedAt).toLocaleDateString()}</span>
-                      )}
-                      <span>{new Date(article.createdAt).toLocaleDateString()}</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleTogglePublish(article.id)}
-                      className={article.published ? 'text-green-500' : 'text-gray-400'}
-                    >
-                      {article.published ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                    </Button>
-                    <Button variant="outline" size="sm">
-                      <Edit className="w-4 h-4 mr-1" />
-                      Edit
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => handleDeleteNews(article.id)}
-                      className="text-red-600 hover:text-red-700"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
-
-      {filteredNews.length === 0 && (
         <Card>
-          <CardContent className="text-center py-12">
-            <Search className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">No articles found</h3>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              Try adjusting your search or filter criteria
-            </p>
+          <CardContent className="p-0">
+            <div className="divide-y">
+              {filteredNews.map((item) => (
+                <div key={item.id} className="p-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800">
+                  <div className="flex items-center space-x-4">
+                    <Newspaper className="w-8 h-8 text-blue-500 shrink-0" />
+                    <div>
+                      <h3 className="font-semibold text-gray-900 dark:text-white">{item.title}</h3>
+                      <p className="text-sm text-gray-500">{item.category} • By {item.author}</p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-red-600 hover:bg-red-50"
+                    onClick={() => handleDeleteNews(item.id)}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
       )}

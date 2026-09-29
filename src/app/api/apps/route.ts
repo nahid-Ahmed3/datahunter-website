@@ -1,171 +1,81 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
+// GET all apps from Database
 export async function GET() {
   try {
-    // Sample data for demonstration
-    // In a real app, you would fetch this from the database
-    const apps = [
-      {
-        id: '1',
-        name: 'Data Pro Analyzer',
-        description: 'Advanced data analysis tool with AI-powered insights and real-time processing capabilities.',
-        version: '2.1.0',
-        size: '45 MB',
-        category: 'Productivity',
-        platform: 'multi',
-        downloadUrl: 'https://example.com/download/datapro-analyzer',
-        iconUrl: '/icons/datapro.svg',
-        screenshot1: '/screenshots/datapro1.jpg',
-        screenshot2: '/screenshots/datapro2.jpg',
-        screenshot3: '/screenshots/datapro3.jpg',
-        screenshot4: '/screenshots/datapro4.jpg',
-        rating: 4.8,
-        downloadCount: 15420,
-        isFeatured: true,
-        isVerified: true,
-        createdAt: new Date().toISOString(),
-      },
-      {
-        id: '2',
-        name: 'SecureVault Manager',
-        description: 'Ultimate password manager with military-grade encryption and cross-device synchronization.',
-        version: '3.0.5',
-        size: '28 MB',
-        category: 'Security',
-        platform: 'multi',
-        downloadUrl: 'https://example.com/download/securevault',
-        iconUrl: '/icons/securevault.svg',
-        screenshot1: '/screenshots/securevault1.jpg',
-        screenshot2: '/screenshots/securevault2.jpg',
-        screenshot3: '/screenshots/securevault3.jpg',
-        rating: 4.9,
-        downloadCount: 23150,
-        isFeatured: true,
-        isVerified: true,
-        createdAt: new Date().toISOString(),
-      },
-      {
-        id: '3',
-        name: 'CloudSync Pro',
-        description: 'Seamless file synchronization across all your devices with automatic backup and version control.',
-        version: '1.8.2',
-        size: '67 MB',
-        category: 'Utilities',
-        platform: 'multi',
-        downloadUrl: 'https://example.com/download/cloudsync',
-        iconUrl: '/icons/cloudsync.svg',
-        screenshot1: '/screenshots/cloudsync1.jpg',
-        screenshot2: '/screenshots/cloudsync2.jpg',
-        screenshot3: '/screenshots/cloudsync3.jpg',
-        rating: 4.6,
-        downloadCount: 8930,
-        isFeatured: false,
-        isVerified: true,
-        createdAt: new Date().toISOString(),
-      },
-      {
-        id: '4',
-        name: 'VideoMaster Editor',
-        description: 'Professional video editing software with 4K support, effects, and intuitive timeline.',
-        version: '4.2.1',
-        size: '156 MB',
-        category: 'Multimedia',
-        platform: 'multi',
-        downloadUrl: 'https://example.com/download/videomaster',
-        iconUrl: '/icons/videomaster.svg',
-        screenshot1: '/screenshots/videomaster1.jpg',
-        screenshot2: '/screenshots/videomaster2.jpg',
-        screenshot3: '/screenshots/videomaster3.jpg',
-        screenshot4: '/screenshots/videomaster4.jpg',
-        rating: 4.7,
-        downloadCount: 12480,
-        isFeatured: true,
-        isVerified: true,
-        createdAt: new Date().toISOString(),
-      },
-      {
-        id: '5',
-        name: 'CodeForge IDE',
-        description: 'Powerful integrated development environment with support for multiple programming languages.',
-        version: '5.0.0',
-        size: '234 MB',
-        category: 'Development',
-        platform: 'multi',
-        downloadUrl: 'https://example.com/download/codeforge',
-        iconUrl: '/icons/codeforge.svg',
-        screenshot1: '/screenshots/codeforge1.jpg',
-        screenshot2: '/screenshots/codeforge2.jpg',
-        screenshot3: '/screenshots/codeforge3.jpg',
-        rating: 4.9,
-        downloadCount: 18760,
-        isFeatured: false,
-        isVerified: true,
-        createdAt: new Date().toISOString(),
-      },
-      {
-        id: '6',
-        name: 'Design Studio Pro',
-        description: 'Complete design toolkit for graphic design, UI/UX, and creative projects.',
-        version: '3.5.4',
-        size: '189 MB',
-        category: 'Design',
-        platform: 'multi',
-        downloadUrl: 'https://example.com/download/designstudio',
-        iconUrl: '/icons/designstudio.svg',
-        screenshot1: '/screenshots/designstudio1.jpg',
-        screenshot2: '/screenshots/designstudio2.jpg',
-        screenshot3: '/screenshots/designstudio3.jpg',
-        screenshot4: '/screenshots/designstudio4.jpg',
-        rating: 4.8,
-        downloadCount: 15670,
-        isFeatured: true,
-        isVerified: true,
-        createdAt: new Date().toISOString(),
-      },
-      {
-        id: '7',
-        name: 'GameCenter Hub',
-        description: 'Gaming platform with game library, achievements, and community features.',
-        version: '2.3.1',
-        size: '78 MB',
-        category: 'Gaming',
-        platform: 'multi',
-        downloadUrl: 'https://example.com/download/gamecenter',
-        iconUrl: '/icons/gamecenter.svg',
-        screenshot1: '/screenshots/gamecenter1.jpg',
-        screenshot2: '/screenshots/gamecenter2.jpg',
-        screenshot3: '/screenshots/gamecenter3.jpg',
-        rating: 4.5,
-        downloadCount: 9240,
-        isFeatured: false,
-        isVerified: false,
-        createdAt: new Date().toISOString(),
-      },
-      {
-        id: '8',
-        name: 'FinanceTracker Plus',
-        description: 'Comprehensive personal finance management with budgeting, investing, and reporting.',
-        version: '1.6.3',
-        size: '34 MB',
-        category: 'Finance',
-        platform: 'multi',
-        downloadUrl: 'https://example.com/download/financetracker',
-        iconUrl: '/icons/financetracker.svg',
-        screenshot1: '/screenshots/financetracker1.jpg',
-        screenshot2: '/screenshots/financetracker2.jpg',
-        screenshot3: '/screenshots/financetracker3.jpg',
-        rating: 4.4,
-        downloadCount: 6890,
-        isFeatured: false,
-        isVerified: true,
-        createdAt: new Date().toISOString(),
-      },
-    ]
-
+    const apps = await db.app.findMany({
+      orderBy: { createdAt: 'desc' }
+    })
     return NextResponse.json(apps)
   } catch (error) {
     console.error('Error fetching apps:', error)
     return NextResponse.json({ error: 'Failed to fetch apps' }, { status: 500 })
+  }
+}
+
+// POST create new app in Database
+export async function POST(request: Request) {
+  try {
+    const body = await request.json()
+    const { 
+      name, 
+      description, 
+      version, 
+      size, 
+      category, 
+      platform, 
+      downloadUrl, 
+      iconUrl, 
+      isFeatured, 
+      isVerified 
+    } = body
+
+    if (!name || !description || !downloadUrl) {
+      return NextResponse.json({ error: 'Name, description and download URL are required' }, { status: 400 })
+    }
+
+    const newApp = await db.app.create({
+      data: {
+        name,
+        description,
+        version: version || '1.0.0',
+        size: size || '10 MB',
+        category: category || 'General',
+        platform: platform || 'multi',
+        downloadUrl,
+        iconUrl: iconUrl || '/datahunter-icon.png',
+        rating: 5.0,
+        downloadCount: 0,
+        isFeatured: Boolean(isFeatured),
+        isVerified: Boolean(isVerified)
+      }
+    })
+
+    return NextResponse.json(newApp, { status: 201 })
+  } catch (error) {
+    console.error('Error creating app:', error)
+    return NextResponse.json({ error: 'Failed to create app' }, { status: 500 })
+  }
+}
+
+// DELETE an app from Database
+export async function DELETE(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const id = searchParams.get('id')
+
+    if (!id) {
+      return NextResponse.json({ error: 'App ID is required' }, { status: 400 })
+    }
+
+    await db.app.delete({
+      where: { id }
+    })
+
+    return NextResponse.json({ success: true, id })
+  } catch (error) {
+    console.error('Error deleting app:', error)
+    return NextResponse.json({ error: 'Failed to delete app' }, { status: 500 })
   }
 }
