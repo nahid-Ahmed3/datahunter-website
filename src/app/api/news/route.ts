@@ -1,16 +1,15 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
-// GET all news items from Database
+// GET all news items from Database safely (always returns array)
 export async function GET() {
   try {
     const news = await db.news.findMany({
       orderBy: { createdAt: 'desc' }
     })
-    return NextResponse.json(news)
+    return NextResponse.json(Array.isArray(news) ? news : [])
   } catch (error) {
-    console.error('Error fetching news:', error)
-    return NextResponse.json({ error: 'Failed to fetch news' }, { status: 500 })
+    return NextResponse.json([])
   }
 }
 
@@ -47,7 +46,6 @@ export async function POST(request: Request) {
 
     return NextResponse.json(newNews, { status: 201 })
   } catch (error) {
-    console.error('Error creating news:', error)
     return NextResponse.json({ error: 'Failed to create news' }, { status: 500 })
   }
 }
@@ -68,7 +66,6 @@ export async function DELETE(request: Request) {
 
     return NextResponse.json({ success: true, id })
   } catch (error) {
-    console.error('Error deleting news:', error)
     return NextResponse.json({ error: 'Failed to delete news' }, { status: 500 })
   }
 }

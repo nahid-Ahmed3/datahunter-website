@@ -1,16 +1,15 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
-// GET all apps from Database
+// GET all apps from Database safely (always returns array)
 export async function GET() {
   try {
     const apps = await db.app.findMany({
       orderBy: { createdAt: 'desc' }
     })
-    return NextResponse.json(apps)
+    return NextResponse.json(Array.isArray(apps) ? apps : [])
   } catch (error) {
-    console.error('Error fetching apps:', error)
-    return NextResponse.json({ error: 'Failed to fetch apps' }, { status: 500 })
+    return NextResponse.json([])
   }
 }
 
@@ -40,7 +39,7 @@ export async function POST(request: Request) {
         name,
         description,
         version: version || '1.0.0',
-        size: size || '10 MB',
+        size: size || '15 MB',
         category: category || 'General',
         platform: platform || 'multi',
         downloadUrl,
@@ -54,7 +53,6 @@ export async function POST(request: Request) {
 
     return NextResponse.json(newApp, { status: 201 })
   } catch (error) {
-    console.error('Error creating app:', error)
     return NextResponse.json({ error: 'Failed to create app' }, { status: 500 })
   }
 }
@@ -75,7 +73,6 @@ export async function DELETE(request: Request) {
 
     return NextResponse.json({ success: true, id })
   } catch (error) {
-    console.error('Error deleting app:', error)
     return NextResponse.json({ error: 'Failed to delete app' }, { status: 500 })
   }
 }

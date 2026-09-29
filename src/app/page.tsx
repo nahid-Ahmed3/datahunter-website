@@ -90,9 +90,9 @@ export default function Home() {
     try {
       const response = await fetch('/api/apps')
       const data = await response.json()
-      setApps(data)
+      setApps(Array.isArray(data) ? data : [])
     } catch (error) {
-      console.error('Failed to fetch apps:', error)
+      setApps([])
     } finally {
       setLoading(false)
     }
@@ -102,9 +102,9 @@ export default function Home() {
     try {
       const response = await fetch('/api/news')
       const data = await response.json()
-      setNews(data)
+      setNews(Array.isArray(data) ? data : [])
     } catch (error) {
-      console.error('Failed to fetch news:', error)
+      setNews([])
     }
   }
 
