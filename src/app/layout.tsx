@@ -45,6 +45,24 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                var noop = function() {};
+                window.console.log = noop;
+                window.console.error = noop;
+                window.console.warn = noop;
+                window.console.info = noop;
+                window.console.debug = noop;
+                window.console.trace = noop;
+                window.console.table = noop;
+              })();
+            `
+          }}
+        />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >

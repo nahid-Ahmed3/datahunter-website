@@ -39,7 +39,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         // Check if auth is properly initialized
         if (!auth) {
-          console.warn('Firebase auth not available, using development mode');
           setIsDevMode(true);
           // In dev mode, we'll simulate user state
           setLoading(false);
@@ -50,12 +49,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(user);
           setLoading(false);
         }, (error) => {
-          console.error('Auth state error:', error);
           setError('Authentication error occurred');
           setLoading(false);
         });
       } catch (error: any) {
-        console.error('Auth initialization error:', error);
         setIsDevMode(true);
         setError('Authentication system using development mode');
         setLoading(false);
@@ -82,7 +79,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.log('Mock Google sign in successful');
       }
     } catch (error: any) {
-      console.error('Google sign in error:', error);
       setError(error.message || 'Failed to sign in with Google');
     }
   };
@@ -97,7 +93,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.log('Mock sign up successful');
       }
     } catch (error: any) {
-      console.error('Sign up error:', error);
       setError(error.message || 'Failed to create account');
       throw error;
     }
@@ -113,7 +108,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.log('Mock sign in successful');
       }
     } catch (error: any) {
-      console.error('Sign in error:', error);
       setError(error.message || 'Failed to sign in');
       throw error;
     }
@@ -129,7 +123,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.log('Mock logout successful');
       }
     } catch (error: any) {
-      console.error('Logout error:', error);
       setError(error.message || 'Failed to logout');
     }
   };
