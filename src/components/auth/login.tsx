@@ -32,18 +32,16 @@ export default function Login({ onToggleMode }: LoginProps) {
       console.error('Login error:', error);
       let errorMessage = 'Failed to sign in';
       
-      if (error.code === 'auth/user-not-found') {
-        errorMessage = 'No account found with this email';
-      } else if (error.code === 'auth/wrong-password') {
-        errorMessage = 'Incorrect password';
+      if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+        errorMessage = 'Invalid email or password. If you do not have an account, please click "Sign Up" below.';
       } else if (error.code === 'auth/invalid-email') {
-        errorMessage = 'Invalid email address';
+        errorMessage = 'Invalid email address format.';
       } else if (error.code === 'auth/user-disabled') {
-        errorMessage = 'Account has been disabled';
+        errorMessage = 'Account has been disabled.';
       } else if (error.code === 'auth/too-many-requests') {
-        errorMessage = 'Too many failed attempts. Please try again later';
+        errorMessage = 'Too many failed attempts. Please try again later.';
       } else {
-        errorMessage = error.message || 'Failed to sign in';
+        errorMessage = error.message || 'Failed to sign in.';
       }
       
       setError(errorMessage);
